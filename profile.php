@@ -76,7 +76,52 @@ function get_initials($name) {
 </head>
 <body>
     <div class="threads-layout">
-        <!-- Top Navigation -->
+        <!-- Side Navigation -->
+        <aside class="side-nav">
+            <div class="side-nav-header">
+                <a href="index.php" class="side-nav-logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span class="side-nav-logo-text">CampusBuzz</span>
+                </a>
+            </div>
+            
+            <nav class="side-nav-menu">
+                <a href="index.php" class="side-nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="explore.php" class="side-nav-item">
+                    <i class="fas fa-search"></i>
+                    <span>Explore</span>
+                </a>
+                <a href="profile.php" class="side-nav-item active">
+                    <i class="far fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="logout.php" class="side-nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+                
+                <!-- <button class="side-nav-post-btn" onclick="window.location.href='index.php'">
+                    <span>Post</span>
+                </button>
+            </nav> -->
+            
+            <div class="side-nav-footer">
+                <a href="profile.php" class="side-nav-user">
+                    <div class="side-nav-avatar">
+                        <?php echo get_initials($user_name); ?>
+                    </div>
+                    <div class="side-nav-user-info">
+                        <span class="side-nav-user-name"><?php echo htmlspecialchars($user_name); ?></span>
+                        <span class="side-nav-user-handle">@<?php echo strtolower(str_replace(' ', '', $user_name)); ?></span>
+                    </div>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Top Navigation (Mobile) -->
         <nav class="top-nav">
             <div class="nav-container">
                 <a href="index.php" class="nav-logo">
@@ -86,6 +131,9 @@ function get_initials($name) {
                 <div class="nav-actions">
                     <a href="logout.php" class="nav-icon" title="Logout">
                         <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                    <a href="index.php" class="nav-icon">
+                        <i class="far fa-edit"></i>
                     </a>
                 </div>
             </div>
@@ -176,7 +224,7 @@ function get_initials($name) {
             <a href="explore.php" class="bottom-nav-item">
                 <i class="fas fa-search"></i>
             </a>
-            <a href="#" class="bottom-nav-item" onclick="openNewThreadModal()">
+            <a href="index.php" class="bottom-nav-item">
                 <i class="fas fa-plus-square"></i>
             </a>
             <a href="profile.php" class="bottom-nav-item active">

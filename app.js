@@ -1,26 +1,28 @@
 /**
- * CampusBuzz - Threads Style JavaScript
- * Handles post creation, likes, and UI interactions
+ * CampusBuzz - Main JavaScript
  */
 
 // Character counter for thread composer
 const threadContent = document.getElementById('threadContent');
 const charCount = document.getElementById('charCount');
+const postButton = document.querySelector('.post-button');
 
 if (threadContent && charCount) {
     threadContent.addEventListener('input', function() {
         const length = this.value.length;
         charCount.textContent = `${length}/280`;
         
-        // Change color based on character count
-        if (length > 260) {
-            charCount.classList.add('error');
-            charCount.classList.remove('warning');
-        } else if (length > 240) {
+        // Update counter styling
+        charCount.classList.remove('warning', 'error');
+        if (length > 250 && length <= 280) {
             charCount.classList.add('warning');
-            charCount.classList.remove('error');
-        } else {
-            charCount.classList.remove('warning', 'error');
+        } else if (length > 280) {
+            charCount.classList.add('error');
+        }
+        
+        // Disable/enable post button
+        if (postButton) {
+            postButton.disabled = length === 0 || length > 280;
         }
     });
 }
@@ -33,30 +35,28 @@ if (threadForm) {
         
         const content = threadContent.value.trim();
         const tag = document.getElementById('tag').value;
-        const postMessage = document.getElementById('postMessage');
         
+        // Validation
         if (!content) {
-            showAlert('Please write something before posting.', 'error');
+            showMessage('Please write something before posting', 'error');
             return;
         }
         
         if (content.length > 280) {
-            showAlert('Thread is too long. Maximum 280 characters allowed.', 'error');
+            showMessage('Content exceeds 280 characters', 'error');
             return;
         }
         
-        // Disable submit button
-        const submitBtn = this.querySelector('.post-button');
-        const originalText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="loading-spinner"></span>';
+        // Disable button during submission
+        postButton.disabled = true;
+        postButton.textContent = 'Posting...';
         
         try {
             const formData = new FormData();
             formData.append('content', content);
             formData.append('tag', tag);
             
-            const response = await fetch('api/create_post.php', {
+            const response = await fetch('create_post.php', {
                 method: 'POST',
                 body: formData
             });
@@ -70,37 +70,118 @@ if (threadForm) {
                 charCount.textContent = '0/280';
                 charCount.classList.remove('warning', 'error');
                 
-                showAlert('Thread posted successfully!', 'success');
+                // Show success message
+                showMessage('Post created successfully!', 'success');
                 
-                // Reload page after short delay to show new post
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                // Add new post to feed
+                addPostToFeed(data.post);
+                
             } else {
-                showAlert(data.message || 'Failed to post thread. Please try again.', 'error');
+                showMessage(data.message || 'Failed to create post', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            showAlert('Network error. Please check your connection.', 'error');
+            showMessage('An error occurred. Please try again.', 'error');
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            postButton.disabled = false;
+            postButton.textContent = 'Post';
         }
     });
 }
 
+// Show message alert
+function showMessage(message, type) {
+    const messageDiv = document.getElementById('postMessage');
+    if (!messageDiv) return;
+    
+    messageDiv.textContent = message;
+    messageDiv.className = `alert alert-${type}`;
+    messageDiv.style.display = 'flex';
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 3000);
+}
+
+// Add new post to feed
+function addPostToFeed(post) {
+    const threadsContainer = document.getElementById('threadsContainer');
+    if (!threadsContainer) return;
+    
+    // Remove empty state if it exists
+    const emptyState = threadsContainer.querySelector('.empty-state');
+    if (emptyState) {
+        emptyState.remove();
+    }
+    
+    // Get user initials
+    const initials = getInitials(post.author_name);
+    
+    // Create post HTML
+    const postHTML = `
+        <article class="thread-item" data-post-id="${post.id}">
+            <div class="thread-header">
+                <div class="thread-avatar">${initials}</div>
+                <div class="thread-body">
+                    <div class="thread-user-info">
+                        <span class="thread-username">${escapeHtml(post.author_name)}</span>
+                        <span class="thread-time">now</span>
+                        ${post.tag ? `<span class="thread-tag tag-${post.tag.toLowerCase()}">#${escapeHtml(post.tag)}</span>` : ''}
+                    </div>
+                    <div class="thread-content">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
+                    <div class="thread-actions">
+                        <button class="action-button" onclick="toggleLike(${post.id})">
+                            <i class="far fa-heart"></i>
+                            <span class="like-count">0</span>
+                        </button>
+                        <button class="action-button">
+                            <i class="far fa-comment"></i>
+                            <span>Reply</span>
+                        </button>
+                        <button class="action-button">
+                            <i class="far fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </article>
+    `;
+    
+    // Insert at the beginning
+    threadsContainer.insertAdjacentHTML('afterbegin', postHTML);
+}
+
+// Get initials from name
+function getInitials(name) {
+    const words = name.trim().split(' ');
+    if (words.length >= 2) {
+        return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Toggle like on a post
 async function toggleLike(postId) {
-    const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-    const likeButton = postElement.querySelector('.action-button');
-    const likeIcon = likeButton.querySelector('i');
-    const likeCount = likeButton.querySelector('.like-count');
+    const button = document.querySelector(`[data-post-id="${postId}"] .action-button`);
+    if (!button) return;
+    
+    const icon = button.querySelector('i');
+    const countSpan = button.querySelector('.like-count');
+    const isLiked = button.classList.contains('liked');
     
     try {
         const formData = new FormData();
         formData.append('post_id', postId);
         
-        const response = await fetch('api/toggle_like.php', {
+        const response = await fetch('toggle_like.php', {
             method: 'POST',
             body: formData
         });
@@ -109,55 +190,20 @@ async function toggleLike(postId) {
         
         if (data.success) {
             // Update UI
-            likeCount.textContent = data.like_count;
+            button.classList.toggle('liked');
             
-            if (data.action === 'liked') {
-                likeButton.classList.add('liked');
-                likeIcon.classList.remove('far');
-                likeIcon.classList.add('fas');
+            if (data.liked) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
             } else {
-                likeButton.classList.remove('liked');
-                likeIcon.classList.remove('fas');
-                likeIcon.classList.add('far');
+                icon.classList.remove('fas');
+                icon.classList.add('far');
             }
-        } else {
-            showAlert(data.message || 'Failed to update like.', 'error');
+            
+            countSpan.textContent = data.like_count;
         }
     } catch (error) {
-        console.error('Error:', error);
-        showAlert('Network error. Please try again.', 'error');
-    }
-}
-
-// Show alert message
-function showAlert(message, type = 'success') {
-    const postMessage = document.getElementById('postMessage');
-    if (!postMessage) {
-        alert(message);
-        return;
-    }
-    
-    postMessage.textContent = message;
-    postMessage.className = `alert alert-${type}`;
-    postMessage.style.display = 'flex';
-    
-    // Add icon
-    const icon = document.createElement('i');
-    icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
-    postMessage.insertBefore(icon, postMessage.firstChild);
-    
-    // Hide after 5 seconds
-    setTimeout(() => {
-        postMessage.style.display = 'none';
-    }, 5000);
-}
-
-// Open new thread modal (placeholder for future modal implementation)
-function openNewThreadModal() {
-    const threadContent = document.getElementById('threadContent');
-    if (threadContent) {
-        threadContent.focus();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        console.error('Error toggling like:', error);
     }
 }
 
@@ -165,47 +211,6 @@ function openNewThreadModal() {
 if (threadContent) {
     threadContent.addEventListener('input', function() {
         this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
+        this.style.height = Math.max(100, this.scrollHeight) + 'px';
     });
 }
-
-// Smooth scroll for navigation
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
-// Handle window resize for responsive layout
-let resizeTimer;
-window.addEventListener('resize', function() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function() {
-        // Add any resize-specific logic here
-    }, 250);
-});
-
-// Prevent double-click on buttons
-document.addEventListener('DOMContentLoaded', function() {
-    const buttons = document.querySelectorAll('button');
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.classList.contains('processing')) {
-                return false;
-            }
-            this.classList.add('processing');
-            setTimeout(() => {
-                this.classList.remove('processing');
-            }, 1000);
-        });
-    });
-});
-
-console.log('CampusBuzz Threads UI loaded successfully!');
