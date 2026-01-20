@@ -1,7 +1,5 @@
 <?php
-/**
- * Login Page - Threads Style
- */
+
 
 session_start();
 require_once 'config/db.php';

@@ -1,7 +1,5 @@
 <?php
-/**
- * Home Page - Threads feed with Floating Action Button + Modal
- */
+
 session_start();
 require_once 'config/db.php';
 

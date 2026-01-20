@@ -1,8 +1,4 @@
 <?php
-/**
- * Logout Script
- * Destroys user session and redirects to login
- */
 
 session_start();
 

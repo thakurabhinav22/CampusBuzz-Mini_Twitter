@@ -1,7 +1,4 @@
 <?php
-/**
- * Registration Page - Threads Style
- */
 
 session_start();
 require_once 'config/db.php';
@@ -41,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Email already registered. Please login or use a different email.';
         } else {
             // Hash password and insert user
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT); //Inbuilt function to has password 
             
             $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
             $stmt->bind_param("sss", $name, $email, $hashed_password);
@@ -69,7 +66,7 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - CampusBuzz</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> <!-- For Icons -->
 </head>
 <body>
     <div class="auth-container">

@@ -1,8 +1,5 @@
 <?php
-/**
- * Explore Page - Threads Style
- * Shows trending tags and posts by tag
- */
+
 
 session_start();
 require_once 'config/db.php';

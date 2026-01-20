@@ -1,8 +1,4 @@
 <?php
-/**
- * Like/Unlike Handler
- * AJAX endpoint for toggling likes on posts
- */
 
 session_start();
 require_once 'config/db.php';
