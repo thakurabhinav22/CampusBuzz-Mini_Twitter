@@ -91,11 +91,11 @@ function get_initials($name) {
                     <span>Home</span>
                 </a>
                 <a href="explore.php" class="side-nav-item">
-                    <i class="fas fa-search"></i>
+                    <i class="fas fa-compass"></i>
                     <span>Explore</span>
                 </a>
                 <a href="profile.php" class="side-nav-item active">
-                    <i class="far fa-user"></i>
+                    <i class="fas fa-user"></i>
                     <span>Profile</span>
                 </a>
                 <a href="logout.php" class="side-nav-item">
@@ -222,13 +222,13 @@ function get_initials($name) {
                 <i class="fas fa-home"></i>
             </a>
             <a href="explore.php" class="bottom-nav-item">
-                <i class="fas fa-search"></i>
+                <i class="fas fa-compass"></i>
             </a>
             <a href="index.php" class="bottom-nav-item">
                 <i class="fas fa-plus-square"></i>
             </a>
             <a href="profile.php" class="bottom-nav-item active">
-                <i class="far fa-user"></i>
+                <i class="fas fa-user"></i>
             </a>
             <a href="logout.php" class="bottom-nav-item">
                 <i class="fas fa-sign-out-alt"></i>

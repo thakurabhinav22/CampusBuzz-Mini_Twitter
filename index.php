@@ -27,6 +27,18 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $posts = $stmt->get_result();
 
+// Fetch trending tags
+$trending_stmt = $conn->prepare("
+    SELECT tag, COUNT(*) as count 
+    FROM posts 
+    WHERE tag IS NOT NULL AND tag != ''
+    GROUP BY tag 
+    ORDER BY count DESC 
+    LIMIT 5
+");
+$trending_stmt->execute();
+$trending_tags = $trending_stmt->get_result();
+
 function time_elapsed(string $datetime): string {
     $now = new DateTime();
     $ago = new DateTime($datetime);
@@ -46,13 +58,26 @@ function get_initials(string $name): string {
     }
     return strtoupper(substr($name, 0, 2)) ?: '??';
 }
+
+function get_tag_emoji(string $tag): string {
+    $emojis = [
+        'Exam' => '📝',
+        'Fest' => '🎉',
+        'Notice' => '📢',
+        'Study' => '📚',
+        'Project' => '💼',
+        'Sports' => '⚽',
+        'Event' => '🎪'
+    ];
+    return $emojis[$tag] ?? '🔖';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusBuzz</title>
+    <title>CampusBuzz - Home</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -64,16 +89,32 @@ function get_initials(string $name): string {
         <aside class="side-nav">
             <div class="side-nav-header">
                 <a href="index.php" class="side-nav-logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span class="side-nav-logo-text">CampusBuzz</span>
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="logo-text-container">
+                        <span class="logo-title">CampusBuzz</span>
+                    </div>
                 </a>
             </div>
 
             <nav class="side-nav-menu">
-                <a href="index.php"       class="side-nav-item active"><i class="fas fa-home"></i><span>Home</span></a>
-                <a href="explore.php"     class="side-nav-item"><i class="fas fa-search"></i><span>Explore</span></a>
-                <a href="profile.php"     class="side-nav-item"><i class="far fa-user"></i><span>Profile</span></a>
-                <a href="logout.php"      class="side-nav-item"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+                <a href="index.php" class="side-nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="explore.php" class="side-nav-item">
+                    <i class="fas fa-compass"></i>
+                    <span>Explore</span>
+                </a>
+                <a href="profile.php" class="side-nav-item">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                                <a href="logout.php" class="side-nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
             </nav>
 
             <div class="side-nav-footer">
@@ -81,8 +122,9 @@ function get_initials(string $name): string {
                     <div class="side-nav-avatar"><?= htmlspecialchars(get_initials($user_name)) ?></div>
                     <div class="side-nav-user-info">
                         <span class="side-nav-user-name"><?= htmlspecialchars($user_name) ?></span>
-                        <span class="side-nav-user-handle">@<?= strtolower(str_replace(' ', '', $user_name)) ?></span>
+                        <span class="side-nav-user-handle">Computer Science '25</span>
                     </div>
+                    <i class="fas fa-ellipsis-h side-nav-more"></i>
                 </a>
             </div>
         </aside>
@@ -92,7 +134,7 @@ function get_initials(string $name): string {
             <div class="nav-container">
                 <a href="index.php" class="nav-logo">
                     <i class="fas fa-graduation-cap"></i>
-                    <span class="nav-logo-text">CampusBuzz</span>
+                    <span class="nav-logo-text">College Buzz</span>
                 </a>
                 <div class="nav-actions">
                     <a href="profile.php" class="nav-icon"><i class="far fa-user"></i></a>
@@ -102,6 +144,42 @@ function get_initials(string $name): string {
 
         <!-- Main content – feed only -->
         <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Home</h1>
+                <button class="header-icon-btn">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+            </div>
+
+            <!-- Composer Section -->
+            <div class="thread-composer">
+                <div class="composer-header">
+                    <div class="composer-avatar"><?= htmlspecialchars(get_initials($user_name)) ?></div>
+                    <div class="composer-placeholder" onclick="openPostModal()">
+                        What's buzzing?
+                    </div>
+                </div>
+                <div class="composer-actions-bar">
+                    <div class="composer-icons">
+                        <button class="composer-icon-btn" title="Add image">
+                            <i class="far fa-image"></i>
+                        </button>
+                        <button class="composer-icon-btn" title="Add poll">
+                            <i class="fas fa-poll"></i>
+                        </button>
+                        <button class="composer-icon-btn" title="Add emoji">
+                            <i class="far fa-smile"></i>
+                        </button>
+                        <button class="composer-icon-btn" title="Add location">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </button>
+                    </div>
+                    <button class="post-button-small" onclick="openPostModal()">Post</button>
+                </div>
+            </div>
+
+            <!-- Feed -->
             <div class="threads-feed" id="threadsContainer">
                 <?php if ($posts->num_rows === 0): ?>
                     <div class="empty-state">
@@ -116,27 +194,37 @@ function get_initials(string $name): string {
                                 <div class="thread-body">
                                     <div class="thread-user-info">
                                         <span class="thread-username"><?= htmlspecialchars($post['author_name']) ?></span>
+                                        <span class="thread-verified"><i class="fas fa-check-circle"></i></span>
+                                        <span class="thread-handle">@<?= strtolower(str_replace(' ', '', $post['author_name'])) ?></span>
                                         <span class="thread-time">· <?= time_elapsed($post['created_at']) ?></span>
-                                        <?php if ($post['tag']): ?>
-                                            <span class="thread-tag tag-<?= strtolower(htmlspecialchars($post['tag'])) ?>">
-                                                #<?= htmlspecialchars($post['tag']) ?>
-                                            </span>
-                                        <?php endif; ?>
                                     </div>
 
                                     <div class="thread-content">
                                         <?= nl2br(htmlspecialchars($post['content'])) ?>
+                                        <?php if ($post['tag']): ?>
+                                            <div class="thread-tags">
+                                                <span class="thread-hashtag">#<?= htmlspecialchars($post['tag']) ?></span>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
 
                                     <div class="thread-actions">
-                                        <button class="action-button <?= $post['user_liked'] ? 'liked' : '' ?>" 
+                                        <button class="action-button comment-btn">
+                                            <i class="far fa-comment"></i>
+                                            <span>12</span>
+                                        </button>
+                                        <button class="action-button repost-btn">
+                                            <i class="fas fa-retweet"></i>
+                                            <span>24</span>
+                                        </button>
+                                        <button class="action-button like-btn <?= $post['user_liked'] ? 'liked' : '' ?>" 
                                                 data-post-id="<?= $post['id'] ?>">
                                             <i class="<?= $post['user_liked'] ? 'fas' : 'far' ?> fa-heart"></i>
                                             <span class="like-count"><?= $post['like_count'] ?: '0' ?></span>
                                         </button>
-                                        <button class="action-button">
-                                            <i class="far fa-comment"></i>
-                                            <span>Reply</span>
+                                        <button class="action-button share-btn">
+                                            <i class="fas fa-share"></i>
+                                            <span>4.5K</span>
                                         </button>
                                     </div>
                                 </div>
@@ -147,6 +235,81 @@ function get_initials(string $name): string {
             </div>
         </main>
 
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <!-- Search Bar -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search Buzz">
+            </div>
+
+            <!-- Trending Section -->
+            <div class="sidebar-card">
+                <h2 class="sidebar-card-title">Trending in Colleges</h2>
+                <?php 
+                $trending_data = [
+                    ['category' => 'Trending in Tech', 'tag' => 'Hackathon', 'count' => '2.4k'],
+                    ['category' => 'Sports · Trending', 'tag' => 'Inter-College Finals', 'count' => '892'],
+                    ['category' => 'Entertainment', 'tag' => 'FestAuditions', 'count' => '1.2k'],
+                    ['category' => 'Academics', 'tag' => 'LibraryHours', 'count' => '458']
+                ];
+                foreach ($trending_data as $trend): 
+                ?>
+                <div class="trending-item">
+                    <div class="trending-content">
+                        <div class="trending-category"><?= $trend['category'] ?></div>
+                        <div class="trending-tag">#<?= $trend['tag'] ?></div>
+                        <div class="trending-count"><?= $trend['count'] ?> Posts</div>
+                    </div>
+                    <button class="trending-more"><i class="fas fa-ellipsis-h"></i></button>
+                </div>
+                <?php endforeach; ?>
+                <a href="explore.php" class="sidebar-show-more">Show more</a>
+            </div>
+
+            <!-- Upcoming Events -->
+            <div class="sidebar-card">
+                <h2 class="sidebar-card-title">Upcoming Events</h2>
+                
+                <div class="event-item">
+                    <div class="event-date">
+                        <span class="event-month">OCT</span>
+                        <span class="event-day">12</span>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">Career Fair 2024</div>
+                        <div class="event-location">
+                            <i class="fas fa-map-marker-alt"></i> Main Plaza
+                        </div>
+                    </div>
+                </div>
+
+                <div class="event-item">
+                    <div class="event-date">
+                        <span class="event-month">OCT</span>
+                        <span class="event-day">15</span>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">Film Club Screening</div>
+                        <div class="event-location">
+                            <i class="fas fa-map-marker-alt"></i> Media Lab 2
+                        </div>
+                    </div>
+                </div>
+
+                <a href="#" class="sidebar-show-more">View all events</a>
+            </div>
+
+            <!-- Footer Links -->
+            <div class="sidebar-footer">
+                <a href="#">Terms</a>
+                <a href="#">Privacy</a>
+                <a href="#">About</a>
+                <a href="#">Help</a>
+                <span class="copyright">© 2024 CampusBuzz</span>
+            </div>
+        </aside>
+
         <!-- Floating Action Button -->
         <button class="floating-action-btn" title="Create new post" onclick="openPostModal()">
             <i class="fas fa-feather-alt"></i>
@@ -154,11 +317,11 @@ function get_initials(string $name): string {
 
         <!-- Bottom Navigation (mobile) -->
         <nav class="bottom-nav">
-            <a href="index.php"       class="bottom-nav-item active"><i class="fas fa-home"></i></a>
-            <a href="explore.php"     class="bottom-nav-item"><i class="fas fa-search"></i></a>
+            <a href="index.php" class="bottom-nav-item active"><i class="fas fa-home"></i></a>
+            <a href="explore.php" class="bottom-nav-item"><i class="fas fa-compass"></i></a>
             <button class="bottom-nav-item" onclick="openPostModal()"><i class="fas fa-plus-square"></i></button>
-            <a href="profile.php"     class="bottom-nav-item"><i class="far fa-user"></i></a>
-            <a href="logout.php"      class="bottom-nav-item"><i class="fas fa-sign-out-alt"></i></a>
+            <a href="#" class="bottom-nav-item"><i class="fas fa-bell"></i></a>
+            <a href="profile.php" class="bottom-nav-item"><i class="far fa-user"></i></a>
         </nav>
 
     </div>
@@ -206,7 +369,7 @@ function get_initials(string $name): string {
         </div>
     </div>
 
-    <!-- JavaScript (all functionality) -->
+    <!-- JavaScript -->
     <script>
     // Modal controls
     function openPostModal() {
@@ -222,7 +385,7 @@ function get_initials(string $name): string {
         document.getElementById('modalPostBtn').textContent = 'Post';
     }
 
-    // Character counter for modal
+    // Character counter
     const ta = document.getElementById('modalContent');
     const cnt = document.getElementById('modalCharCount');
     const postBtn = document.getElementById('modalPostBtn');
@@ -246,7 +409,7 @@ function get_initials(string $name): string {
 
     if (ta) ta.addEventListener('input', updateCharCount);
 
-    // Post submission from modal
+    // Post submission
     if (postBtn) {
         postBtn.addEventListener('click', async () => {
             const content = ta.value.trim();
@@ -313,17 +476,14 @@ function get_initials(string $name): string {
                 }
 
                 count.textContent = data.like_count || '0';
-            } else {
-                alert(data.message || 'Failed to update like');
             }
         } catch (err) {
             console.error(err);
-            alert('Error connecting to server');
         }
     }
 
     // Attach like handlers
-    document.querySelectorAll('.action-button[data-post-id]').forEach(btn => {
+    document.querySelectorAll('.like-btn[data-post-id]').forEach(btn => {
         btn.addEventListener('click', () => {
             const postId = btn.getAttribute('data-post-id');
             toggleLike(postId, btn);
@@ -339,4 +499,4 @@ function get_initials(string $name): string {
 </body>
 </html>
 
-<?php $stmt->close(); $conn->close(); ?>
+<?php $stmt->close(); $trending_stmt->close(); $conn->close(); ?>
