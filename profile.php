@@ -70,7 +70,7 @@ function get_initials($name) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($user_name); ?> - CampusBuzz</title>
+    <title>CampusBuzz</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -154,7 +154,7 @@ function get_initials($name) {
                         <div class="profile-stats">
                             <div class="profile-stat">
                                 <span class="stat-value"><?php echo $stats['post_count']; ?></span>
-                                <span class="stat-label">Threads</span>
+                                <span class="stat-label">Posts</span>
                             </div>
                             <div class="profile-stat">
                                 <span class="stat-value"><?php echo $stats['total_likes']; ?></span>
