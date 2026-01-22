@@ -161,20 +161,6 @@ function get_tag_emoji(string $tag): string {
                     </div>
                 </div>
                 <div class="composer-actions-bar">
-                    <div class="composer-icons">
-                        <button class="composer-icon-btn" title="Add image">
-                            <i class="far fa-image"></i>
-                        </button>
-                        <button class="composer-icon-btn" title="Add poll">
-                            <i class="fas fa-poll"></i>
-                        </button>
-                        <button class="composer-icon-btn" title="Add emoji">
-                            <i class="far fa-smile"></i>
-                        </button>
-                        <button class="composer-icon-btn" title="Add location">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </button>
-                    </div>
                     <button class="post-button-small" onclick="openPostModal()">Post</button>
                 </div>
             </div>
